@@ -13,9 +13,26 @@
 
 package main
 
+import (
+	"os"
+	"os/signal"
+)
+
 func main() {
 	// Create a process
 	proc := MockProcess{}
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	defer func() {
+		signal.Stop(c)
+	}()
+
+	go func() {
+		<-c            // first ctrl + c
+		signal.Reset() // we remove all registered signals, so if CTRL + C emits SIGINT to the system
+		proc.Stop()
+	}()
 
 	// Run the process (blocking)
 	proc.Run()
